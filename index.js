@@ -32,6 +32,7 @@ app.use(function *(next) {
 });
 
 // External middleware
+app.use(cors());
 app.use(auth({ name: USER, pass: PASS }));
 app.use(logger());
 app.use(bodyParser());
