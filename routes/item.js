@@ -3,10 +3,10 @@
 const Router = require('koa-router');
 const ObjectId = require('mongodb').ObjectID;
 
-const data = new Router({ prefix: '/data' });
+const items = new Router({ prefix: '/items' });
 
-// Convert request body into data model
-function bodyToData(body) {
+// Convert request body into item model
+function bodyToItem(body) {
   const obj = {};
 
   if (body.title) { obj.title = body.title; }
@@ -17,22 +17,22 @@ function bodyToData(body) {
   return obj;
 }
 
-data.get('/', function *() {
-  const results = yield this.db.find().toArray();
+items.get('/', function *() {
+  const items = yield this.db.find().toArray();
 
-  this.body = { count: results.length, data: results };
+  this.body = { count: items.length, data: items };
 });
 
-data.post('/', function *() {
-  const result = yield this.db.insertOne(bodyToData(this.request.body));
+items.post('/', function *() {
+  const result = yield this.db.insertOne(bodyToItem(this.request.body));
 
   if (result && result.insertedCount) {
     this.status = 201;
   }
 });
 
-// Validate data id is an Mongo ObjectId
-data.param('id', function *(id, next) {
+// Validate item id is an Mongo ObjectId
+items.param('id', function *(id, next) {
   try {
     this.id = new ObjectId(id);
     yield next;
@@ -41,18 +41,18 @@ data.param('id', function *(id, next) {
   }
 });
 
-data.get('/:id', function *() {
-  const result = yield this.db.findOne({ _id: this.id });
+items.get('/:id', function *() {
+  const item = yield this.db.findOne({ _id: this.id });
 
-  if (result) {
-    this.body = result;
+  if (item) {
+    this.body = item;
   } else {
     this.status = 404;
   }
 });
 
-data.put('/:id', function *() {
-  const obj = { $set: bodyToData(this.request.body) };
+items.put('/:id', function *() {
+  const obj = { $set: bodyToItem(this.request.body) };
   const result = yield this.db.updateOne({ _id: this.id }, obj);
 
   if (!result.matchedCount) { this.status = 404; }
@@ -60,7 +60,7 @@ data.put('/:id', function *() {
   this.status = 204;
 });
 
-data.del('/:id', function *() {
+items.put('/', function *() {
   const result = yield this.db.removeOne({ _id: this.id });
 
   if (!result.deletedCount) { this.status = 404; }
@@ -68,5 +68,5 @@ data.del('/:id', function *() {
   this.status = 204;
 });
 
-module.exports = data;
+module.exports = items;
 

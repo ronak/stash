@@ -28,9 +28,9 @@ tags.get('/', function *() {
 });
 
 tags.get('/:tag', function *() {
-  const data = yield this.db.find({ tags: this.params.tag }).toArray();
+  const items = yield this.db.find({ tags: this.params.tag }).toArray();
 
-  this.body = { count: data.length, data: data };
+  this.body = { count: data.length, data: items };
 });
 
 module.exports = tags;

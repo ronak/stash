@@ -1,7 +1,7 @@
 {
   "name": "stash",
   "version": "1.0.0",
-  "description": "simple, single user api to stash stuff",
+  "description": "Simple, single user API to store bookmarks and notes",
   "author": "Ronak Patel <rspatel@gmail.com>",
   "private": true,
   "engines": {

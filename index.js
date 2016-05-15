@@ -10,7 +10,7 @@ const logger = require('koa-logger');
 const auth = require('koa-basic-auth');
 const mongo = require('mongodb').MongoClient;
 
-const data = require('./routes/data');
+const items = require('./routes/item');
 const tags = require('./routes/tag');
 
 // Config
@@ -38,28 +38,30 @@ app.use(bodyParser());
 
 // There is only one collection. Make it available to all routes.
 app.use(function *(next) {
-  this.db = this.app.context.db.collection('data');
+  this.db = this.app.context.db.collection('items');
   yield next;
 });
 
 // Routes
-app.use(data.routes());
+app.use(items.routes());
 app.use(tags.routes());
 
-if (process.env.NODE_ENV === 'production') {
-  co(function* () {
-    const options = {
-      key: fs.readFileSync(process.argv[2]),
-      cert: fs.readFileSync(process.argv[3])
-    };
-    app.context.db = yield mongo.connect(DB);
+co(function* () {
+  try {
+    if (process.env.NODE_ENV === 'production') {
+      const options = {
+        key: fs.readFileSync(process.argv[2]),
+        cert: fs.readFileSync(process.argv[3])
+      };
+      app.context.db = yield mongo.connect(DB);
 
-    https.createServer(options, app.callback()).listen(PORT);
-  });
-} else {
-  co(function* () {
-    app.context.db = yield mongo.connect(DB);
-    app.listen(PORT);
-  });
-}
-
+      https.createServer(options, app.callback()).listen(PORT);
+    } else {
+      app.context.db = yield mongo.connect(DB);
+      app.listen(PORT);
+    }
+  } catch (err) {
+    console.log(err);
+    process.exit();
+  }
+})
