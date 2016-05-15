@@ -8,6 +8,7 @@ const bodyParser = require('koa-bodyparser');
 const Router = require('koa-router');
 const logger = require('koa-logger');
 const auth = require('koa-basic-auth');
+const cors = require('koa-cors');
 const mongo = require('mongodb').MongoClient;
 
 const items = require('./routes/item');

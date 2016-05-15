@@ -24,7 +24,9 @@ items.get('/', function *() {
 });
 
 items.post('/', function *() {
-  const result = yield this.db.insertOne(bodyToItem(this.request.body));
+  const obj = bodyToItem(this.request.body);
+  obj.createdAt = obj.updatedAt = new Date();
+  const result = yield this.db.insertOne(obj);
 
   if (result && result.insertedCount) {
     this.status = 201;
@@ -53,6 +55,11 @@ items.get('/:id', function *() {
 
 items.put('/:id', function *() {
   const obj = { $set: bodyToItem(this.request.body) };
+
+  if (Object.keys(obj.$set).length > 0) {
+    obj.$set.updatedAt = new Date();
+  }
+
   const result = yield this.db.updateOne({ _id: this.id }, obj);
 
   if (!result.matchedCount) { this.status = 404; }
@@ -60,7 +67,7 @@ items.put('/:id', function *() {
   this.status = 204;
 });
 
-items.put('/', function *() {
+items.del('/', function *() {
   const result = yield this.db.removeOne({ _id: this.id });
 
   if (!result.deletedCount) { this.status = 404; }
