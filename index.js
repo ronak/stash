@@ -10,15 +10,9 @@ const logger = require('koa-logger');
 const auth = require('koa-basic-auth');
 const cors = require('koa-cors');
 const mongo = require('mongodb').MongoClient;
-
+const config = require('./config');
 const items = require('./routes/item');
 const tags = require('./routes/tag');
-
-// Config
-const USER = process.env.USER;
-const PASS = process.env.PASS;
-const PORT = process.env.PORT;
-const DB = process.env.DB;
 
 const app = koa();
 
@@ -34,7 +28,9 @@ app.use(function *(next) {
 
 // External middleware
 app.use(cors());
-app.use(auth({ name: USER, pass: PASS }));
+if (process.env.NODE_ENV === 'production') {
+  app.use(auth({ name: config.USER, pass: config.PASS }));
+}
 app.use(logger());
 app.use(bodyParser());
 
@@ -50,17 +46,17 @@ app.use(tags.routes());
 
 co(function* () {
   try {
+    app.context.db = yield mongo.connect(config.DB);
+
     if (process.env.NODE_ENV === 'production') {
       const options = {
         key: fs.readFileSync(process.argv[2]),
         cert: fs.readFileSync(process.argv[3])
       };
-      app.context.db = yield mongo.connect(DB);
 
-      https.createServer(options, app.callback()).listen(PORT);
+      https.createServer(options, app.callback()).listen(config.PORT);
     } else {
-      app.context.db = yield mongo.connect(DB);
-      app.listen(PORT);
+      app.listen(config.PORT);
     }
   } catch (err) {
     console.log(err);
