@@ -5,6 +5,11 @@ const ObjectId = require('mongodb').ObjectID;
 
 const items = new Router({ prefix: '/items' });
 
+function isArrayOfStrings(array) {
+  if (!array || !Array.isArray(array)) return false;
+  return array.every((e) => { return typeof e === 'string' });
+}
+
 // Convert request body into item model
 function bodyToItem(body) {
   const obj = {};
@@ -18,12 +23,44 @@ function bodyToItem(body) {
 }
 
 items.get('/', function *() {
-  const items = yield this.db.find().toArray();
+  this.checkQuery('pageindex').optional().isInt();
+  this.checkQuery('pagesize').optional().isInt().le(100);
+  this.checkQuery('sortfield').optional().in(['_id','tag']);
+  this.checkQuery('sortOrder').optional().isInt().in([1,-1]);
+
+  if (this.errors) {
+    this.throw(Error(JSON.stringify(this.errors)), 400);
+  }
+
+  // koa-validate sanitizers don't work so we have to do this manually:
+  const pageIndex = Number(this.query.pageindex) || 1;
+  const pageSize = Number(this.query.pagesize) || 20;
+  const sortField = this.query.sortField || '_id';
+  const sortOrder = Number(this.query.sortOrder) || -1;
+
+  const items = yield this.db
+    .find()
+    .sort({ [sortField]: sortOrder })
+    .skip((pageIndex-1) * pageSize)
+    .limit(pageSize)
+    .toArray();
 
   this.body = { count: items.length, data: items };
 });
 
 items.post('/', function *() {
+  this.checkBody('title').notEmpty();
+  this.checkBody('urls')
+    .optional()
+    .ensure(isArrayOfStrings(this.request.body.urls));
+  this.checkBody('tags')
+    .optional()
+    .ensure(isArrayOfStrings(this.request.body.tags));
+
+  if (this.errors) {
+    this.throw(Error(JSON.stringify(this.errors)), 400);
+  }
+
   const obj = bodyToItem(this.request.body);
   obj.createdAt = obj.updatedAt = new Date();
   const result = yield this.db.insertOne(obj);
@@ -54,6 +91,14 @@ items.get('/:id', function *() {
 });
 
 items.put('/:id', function *() {
+  this.checkBody('title').notEmpty();
+  this.checkBody('urls')
+    .optional()
+    .ensure(isArrayOfStrings(this.request.body.urls));
+  this.checkBody('tags')
+    .optional()
+    .ensure(isArrayOfStrings(this.request.body.tags));
+
   const obj = { $set: bodyToItem(this.request.body) };
 
   if (Object.keys(obj.$set).length > 0) {

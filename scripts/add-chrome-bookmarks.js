@@ -4,12 +4,11 @@ const co = require('co');
 const fs = require('fs');
 const mongo = require('mongodb').MongoClient;
 const moment = require('moment');
-
-const DB = process.env.DB;
+const config = require('../config');
 
 co(function* () {
   try {
-    const db = yield mongo.connect(DB);
+    const db = yield mongo.connect(config.DB);
     const col = db.collection('items');
 
     fs.readFile(process.argv[2], 'utf-8', co.wrap(function *(err, data) {

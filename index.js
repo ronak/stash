@@ -9,6 +9,7 @@ const Router = require('koa-router');
 const logger = require('koa-logger');
 const auth = require('koa-basic-auth');
 const cors = require('koa-cors');
+const validate = require('koa-validate');
 const mongo = require('mongodb').MongoClient;
 const config = require('./config');
 const items = require('./routes/item');
@@ -33,6 +34,7 @@ if (process.env.NODE_ENV === 'production') {
 }
 app.use(logger());
 app.use(bodyParser());
+validate(app);
 
 // There is only one collection. Make it available to all routes.
 app.use(function *(next) {
